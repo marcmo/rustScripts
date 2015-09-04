@@ -9,11 +9,12 @@ fn main() {
     use std::io::prelude::*;
     use std::fs;
     use std::fs::File;
+    use std::vec::Vec;
     use std::error::Error;
     use std::io::BufReader;
 
 
-    let mut cleaned : String = String::from("");
+    let mut cleaned : Vec<String> = Vec::new();
     let mru_file = ".vim_mru_files";
     let backup_file = ".vim_mru_files_backup";
     fs::copy(mru_file, backup_file).unwrap();
@@ -29,8 +30,8 @@ fn main() {
                 print!("{} ==> does not exists, CLEAN\n", line);
                 rm_cnt = rm_cnt + 1;
             } else {
-                cleaned.push_str(&line);
-                cleaned.push_str("\n");
+                cleaned.push(line.to_string());
+                cleaned.push("\n".to_string());
             }
         }
     }
@@ -40,7 +41,9 @@ fn main() {
                            Error::description(&why)),
         Ok(file) => file,
     };
-    match file.write_all(cleaned.as_bytes()) {
+    let joined : String = cleaned.iter().fold(String::new(), |r, c| r + c);
+    match file.write_all(joined.as_bytes()) {
+    // match file.write_all(cleaned.join("")) {
         Err(why) => {
             panic!("couldn't write to {}: {}",
                            mru_path.display(),

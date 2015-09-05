@@ -30,25 +30,24 @@ fn get_cleaned_content(mru_path : &Path) -> Result<(String, i32), io::Error> {
 }
 
 fn main() {
-
-    let mru_file = ".vim_mru_files";
-    let mru_path = Path::new(mru_file);
-    let backup_file = ".vim_mru_files_backup";
-    let res = match fs::copy(mru_file, backup_file){
-        Err(why) => panic!("couldn't create backup: {}", Error::description(&why)),
-        Ok(r) => r,
-    };
-    let mut file = match File::create(&mru_path) {
-        Err(why) => panic!("couldn't create {}: {}", mru_file,
-                           Error::description(&why)),
-        Ok(file) => file,
-    };
-    let (joined, rm_cnt) = get_cleaned_content(mru_path).unwrap();
-    match file.write_all(joined.as_bytes()) {
-        Err(why) => {
-            panic!("couldn't write to {}: {}", mru_file,
-                                               Error::description(&why))
-        },
-        Ok(_) => println!("wrote cleaned file, {} entries removed", rm_cnt),
+    fn replace_original() -> Result<i32, io::Error> {
+        let mru_file = ".vim_mru_files";
+        if !does_file_exist(mru_file) {
+            return Err(io::Error::new(io::ErrorKind::NotFound,
+                                      format!("{} seems not to exist", mru_file)))
+        }
+        let mru_path = Path::new(mru_file);
+        let backup_file = ".vim_mru_files_backup";
+        try!(fs::copy(mru_file, backup_file));
+        let mut file = try!(File::create(&mru_path));
+        let (joined, rm_cnt) = try!(get_cleaned_content(mru_path));
+        try!(file.write_all(joined.as_bytes()));
+        Ok(rm_cnt)
+    }
+    match replace_original() {
+         Err(why) => {
+             panic!("couldn't replace original: {}", Error::description(&why))
+         },
+         Ok(removed) => println!("wrote cleaned file, {} entries removed", removed),
     }
 }

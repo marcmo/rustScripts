@@ -36,15 +36,15 @@ fn get_cleaned_content(mru_path : &Path) -> Result<(String, i32), io::Error> {
 
 fn main() {
     fn replace_original() -> Result<i32, io::Error> {
-        use std::env;
-        let home = env::home_dir().expect("homedir not available");
+        let home = std::env::home_dir().expect("homedir not available");
         let mru_path_buf = Path::new(&home).join(MRU_FILE);
         let mru_path = mru_path_buf.as_path();
         if !does_file_exist(mru_path) {
             return Err(io::Error::new(io::ErrorKind::NotFound,
                                       format!("{} seems not to exist", mru_path.display())))
         }
-        try!(fs::copy(mru_path, BACKUP_FILE));
+        let backup_path_buf = Path::new(&home).join(BACKUP_FILE);
+        try!(fs::copy(mru_path, backup_path_buf));
         let (joined, rm_cnt) = try!(get_cleaned_content(&mru_path));
         let mut file = try!(File::create(mru_path));
         try!(file.write_all(joined.as_bytes()));
